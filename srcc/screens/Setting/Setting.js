@@ -57,7 +57,7 @@ function SettingScreen({ navigation }) {
           onPress: async () => {
             // Clear the user session and remove user data from AsyncStorage
             await AsyncStorage.removeItem("userId");
-            navigation.navigate("LoginByPhoneNumber");
+            navigation.navigate("SignIn");
           },
         },
       ],

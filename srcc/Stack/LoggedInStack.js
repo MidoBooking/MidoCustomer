@@ -1,26 +1,36 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialIcons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/MaterialIcons";
 // Import your screen components
-import HomeScreen from "../Home";
-import BarbershopScreen from "../screens/barbershops";
-import UserDetailsScreen from "../screens/DetailScreen.js/UserDetailsScreen";
-import EmployeeList from "../screens/Specialists/specialists";
-import Congratulations from "../screens/Congratulations/congratulations";
-import Confirmation from "../screens/Confirmation/confirmation";
-import LoginByPhoneNumber from "../screens/SignIn/SignIn";
+import Home from "../screens/Home/Home";
+import Search from "../screens/Search/Search";
+import Appointments from "../screens/Appointments/Appointments";
+import Favorites from "../screens/Favorites/Favorites";
+import Profile from "../screens/Profile/Profile";
+import Setting from "../screens/Setting/Setting";
+
+import Preload from "../screens/Preload/Preload";
+import SignIn from "../screens/SignIn/SignIn";
+import AboutYou from "../screens/SignUp/AboutYou";
+import BusinessCategory from "../screens/SignUp/BusinessCategory";
+import Services from "../screens/SignUp/RegisterService";
+import DayList from "../screens/DayList/DayList";
+import UploadImage from "../screens/ImageUpload/ImageUpload";
+import Congratulations from "../screens/FinalPage/FinalPage";
+import ManageServiceProviders from "../screens/AddServiceProviders/ManageServiceProviders";
 import RegisterbyPhoneNumber from "../screens/SignUp/RegisterbyPhoneNumber";
-import { setUserId } from "../redux/store";
+// Create a stack navigator
+import AddressForm from "../screens/AddressForm";
+import DisplayAddress from "../screens/DisplayAddress";
+import ServiceProviderHours from "../screens/AddServiceProviders/ServiceProvidersHours";
+import ServiceProviderImageUpload from "../screens/AddServiceProviders/ServiceProviderImageUpload";
+import ServiceSetup from "../screens/ServiceSetup/ServiceSetup";
 import { connect } from "react-redux";
-import { useState } from "react";
-import { useEffect } from "react";
+import { setUserId } from "../redux/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoadingComponent from "../components/LoadingComponent";
-import Appointments from "../screens/Appointments/Appointments";
-import SettingScreen from "../screens/Setting/Setting";
-
 const Stack = createNativeStackNavigator();
 // Create a bottom tab navigator
 const Tab = createBottomTabNavigator();
@@ -36,8 +46,11 @@ const MainTab = () => {
 
           // Map each route name to a corresponding icon
           switch (route.name) {
-            case "Home":
-              iconName = "home";
+            case "Clients":
+              iconName = "groups";
+              break;
+            case "Notification":
+              iconName = "notifications";
               break;
             case "Appointments":
               iconName = "event";
@@ -62,18 +75,15 @@ const MainTab = () => {
         tabBarInactiveTintColor: "gray",
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-
       <Tab.Screen name="Appointments" component={Appointments} />
-
-      <Tab.Screen name="Favorites" component={BarbershopScreen} />
-
-      <Tab.Screen name="Setting" component={SettingScreen} />
+      <Tab.Screen name="Clients" component={Home} />
+      <Tab.Screen name="Notification" component={Search} />
+      <Tab.Screen name="Setting" component={Setting} />
     </Tab.Navigator>
   );
 };
 
-const MainStack = () => {
+const LoggedInStack = ({ setUserId }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,17 +109,40 @@ const MainStack = () => {
   };
   return (
     <Stack.Navigator
-      initialRouteName="LoginByPhoneNumber"
+      initialRouteName="Main"
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="SignIn" component={SignIn} />
+
       <Stack.Screen name="Main" component={MainTab} />
-      <Stack.Screen name="barbershop" component={BarbershopScreen} />
-      <Stack.Screen name="UserDetails" component={UserDetailsScreen} />
-      <Stack.Screen name="EmployeeList" component={EmployeeList} />
+
+      <Stack.Screen name="AboutYou" component={AboutYou} />
+
+      <Stack.Screen
+        name="Preload"
+        component={Preload}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen name="BusinessCategory" component={BusinessCategory} />
+      <Stack.Screen name="Services" component={Services} />
+      <Stack.Screen name="DayList" component={DayList} />
+      <Stack.Screen name="ImageUpload" component={UploadImage} />
+
       <Stack.Screen name="Congratulations" component={Congratulations} />
-      <Stack.Screen name="confirmation" component={Confirmation} />
-      <Stack.Screen name="LoginByPhoneNumber" component={LoginByPhoneNumber} />
+      {/* setting screens */}
+      <Stack.Screen
+        name="ManageServiceProviders"
+        component={ManageServiceProviders}
+      />
+
+      <Stack.Screen name="AddressForm" component={AddressForm} />
+      <Stack.Screen name="displayaddress" component={DisplayAddress} />
+      <Stack.Screen name="workingHours" component={ServiceProviderHours} />
+      <Stack.Screen
+        name="serviceProvidersImageUpload"
+        component={ServiceProviderImageUpload}
+      />
+      <Stack.Screen name="serviceSetup" component={ServiceSetup} />
       <Stack.Screen
         name="RegisterbyPhoneNumber"
         component={RegisterbyPhoneNumber}
@@ -117,10 +150,11 @@ const MainStack = () => {
     </Stack.Navigator>
   );
 };
+
 const mapDispatchToProps = (dispatch) => {
   return {
     setUserId: (myuserid) => dispatch(setUserId(myuserid)), // Dispatch the action
   };
 };
 
-export default connect(null, mapDispatchToProps)(MainStack);
+export default connect(null, mapDispatchToProps)(LoggedInStack);

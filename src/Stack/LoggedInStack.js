@@ -73,7 +73,7 @@ const MainTab = () => {
   );
 };
 
-const MainStack = () => {
+const LoggedInStack = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ const MainStack = () => {
   };
   return (
     <Stack.Navigator
-      initialRouteName="LoginByPhoneNumber"
+      initialRouteName="Main"
       screenOptions={{ headerShown: false }}
     >
       <Stack.Screen name="Home" component={HomeScreen} />
@@ -123,4 +123,4 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 
-export default connect(null, mapDispatchToProps)(MainStack);
+export default connect(null, mapDispatchToProps)(LoggedInStack);
