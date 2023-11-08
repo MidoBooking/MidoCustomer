@@ -20,7 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoadingComponent from "../components/LoadingComponent";
 import Appointments from "../screens/Appointments/Appointments";
 import SettingScreen from "../screens/Setting/Setting";
-
+import AboutYou from "../screens/SignUp/AboutYou";
 const Stack = createNativeStackNavigator();
 // Create a bottom tab navigator
 const Tab = createBottomTabNavigator();
@@ -114,6 +114,7 @@ const LoggedInStack = () => {
         name="RegisterbyPhoneNumber"
         component={RegisterbyPhoneNumber}
       />
+      <Stack.Screen name="AboutYou" component={AboutYou} />
     </Stack.Navigator>
   );
 };

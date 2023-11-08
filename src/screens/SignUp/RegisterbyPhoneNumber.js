@@ -21,7 +21,6 @@ import { setUserId } from "../../redux/store";
 import { connect } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import COLORS from "../../consts/colors";
-
 try {
   initializeApp(fbConfig);
 } catch (error) {
@@ -50,7 +49,7 @@ const RegisterbyPhoneNumber = ({ setUserId }) => {
   const savePhoneNumberToFirestore = async (user, phoneNumber) => {
     try {
       const db = getFirestore();
-      const userDocRef = doc(db, "users", user.uid);
+      const userDocRef = doc(db, "Clients", user.uid);
       await setDoc(userDocRef, { phoneNumber }, { merge: true });
       console.log("Phone number saved to Firestore");
     } catch (error) {

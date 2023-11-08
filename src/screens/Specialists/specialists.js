@@ -30,6 +30,7 @@ const ServiceProviderList = () => {
   const [selectedEndTime, setSelectedEndTime] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const [selectedCalendar, setSelectedCalendar] = useState(null);
+  const [client, setClient] = useState(null);
   const [isConfirmationModalVisible, setIsConfirmationModalVisible] =
     useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -81,6 +82,15 @@ const ServiceProviderList = () => {
       .catch((error) => console.error("Error fetching data:", error));
   }, []);
 
+  useEffect(() => {
+    fetch("http://192.168.0.4:3001/fetchClients/1234")
+      .then((response) => response.json())
+      .then((data) => {
+        setClient(data);
+        console.log("clit data is ", data);
+      })
+      .catch((error) => console.error("Error fetching clients:", error));
+  }, []);
   const weekDays = [
     "Monday",
     "Tuesday",

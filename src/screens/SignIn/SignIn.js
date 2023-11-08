@@ -62,15 +62,21 @@ const LoginByPhoneNumber = ({ setUserId }) => {
         verificationId,
         verificationCode
       );
+
+      // Attempt to sign in the user with the provided credential
       const userCredential = await signInWithCredential(auth, credential);
       const user = userCredential.user;
 
-      // Save the user's ID in AsyncStorage
-      await AsyncStorage.setItem("userId", user.uid);
-
-      setInfo("Success: Phone authentication successful");
-      setUserId(user.uid);
-      navigation.navigate("Main");
+      if (user) {
+        // User found in the database, log success message
+        setInfo("Success: Phone authentication successful");
+        setUserId(user.uid);
+        navigation.navigate("Main");
+      } else {
+        // User not found in the database, log an error message
+        setInfo("Error: User not found in the database");
+        console.error("User not found in the database");
+      }
     } catch (error) {
       setInfo(`Error: ${error.message}`);
     }
