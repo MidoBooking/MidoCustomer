@@ -88,7 +88,7 @@ function AboutYou() {
 
       // Make a POST request to your Express.js API to store user information
       const response = await fetch(
-        `http://192.168.0.6:3001/register/${userId}`,
+        `http://192.168.0.8:3001/register/${userId}`,
         {
           method: "POST",
           headers: {

@@ -21,7 +21,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 const ServiceProviderList = () => {
   const userId = useSelector((state) => state.user.userId);
-
+  console.log("client id is ", userId);
   const [serviceProviders, setServiceProviders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedServiceProvider, setSelectedServiceProvider] = useState(null);
@@ -83,11 +83,11 @@ const ServiceProviderList = () => {
   }, []);
 
   useEffect(() => {
-    fetch("http://192.168.0.4:3001/fetchClients/1234")
+    fetch("http://192.168.0.8:3001/fetchClients/1234")
       .then((response) => response.json())
       .then((data) => {
         setClient(data);
-        console.log("clit data is ", data);
+        console.log("clita data is ", data);
       })
       .catch((error) => console.error("Error fetching clients:", error));
   }, []);
