@@ -7,6 +7,9 @@ const DistanceCalculator = ({ serviceProviderLocation }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const calculateDistance = (userLocation, serviceProviderLocation) => {
+    console.log("userLocation", userLocation);
+    console.log("serviceProviderLocation", serviceProviderLocation);
+
     if (!userLocation || !serviceProviderLocation) {
       return "N/A";
     }
@@ -34,7 +37,9 @@ const DistanceCalculator = ({ serviceProviderLocation }) => {
     const distance = earthRadiusKm * c;
 
     if (!isNaN(distance)) {
-      return distance.toFixed(2);
+      return (
+        <Text style={{ fontWeight: "bold" }}>{distance.toFixed(2)} away</Text>
+      );
     } else {
       console.error(
         "Distance calculation failed. Check user and serviceProviderLocation data."
@@ -51,6 +56,7 @@ const DistanceCalculator = ({ serviceProviderLocation }) => {
         if (status !== "granted") {
           console.log("Location permission denied");
           setIsLoading(false);
+          // Handle the case where location permission is denied
           return;
         }
 
@@ -67,7 +73,7 @@ const DistanceCalculator = ({ serviceProviderLocation }) => {
   }, []);
 
   if (isLoading) {
-    return <ActivityIndicator size="small" />;
+    return <Text>Loading...</Text>;
   }
 
   const distance = calculateDistance(userLocation, serviceProviderLocation);

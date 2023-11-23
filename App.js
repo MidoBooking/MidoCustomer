@@ -34,6 +34,7 @@ const App = () => {
   const checkUserLoggedIn = async () => {
     // Check if the user is logged in, e.g., by checking if a user ID is in AsyncStorage.
     const userId = await AsyncStorage.getItem("userId");
+    console.log("user id from app.js", userId);
     return !!userId; // Return true if a user ID is found, indicating the user is logged in.
   };
   return (
@@ -45,6 +46,7 @@ const App = () => {
       />
       <NavigationContainer>
         {initialRoute === "SignIn" ? <MainStack /> : <LoggedInStack />}
+        {/* <MainStack loggedIn={initialRoute} /> */}
       </NavigationContainer>
     </Provider>
   );

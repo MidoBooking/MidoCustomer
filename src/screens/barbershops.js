@@ -27,6 +27,7 @@ const BarberShopUsers = () => {
   const [searchQuery, setSearchQuery] = useState(""); // Add searchQuery state
   const userId = useSelector((state) => state.user.userId);
   console.log("logged in user is", userId);
+
   const navigation = useNavigation();
 
   useEffect(() => {

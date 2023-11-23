@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { MaterialIcons } from "@expo/vector-icons";
 import Icon from "react-native-vector-icons/MaterialIcons";
-// Import your screen components
 import HomeScreen from "../Home";
 import BarbershopScreen from "../screens/barbershops";
 import UserDetailsScreen from "../screens/DetailScreen.js/UserDetailsScreen";
@@ -14,15 +13,14 @@ import LoginByPhoneNumber from "../screens/SignIn/SignIn";
 import RegisterbyPhoneNumber from "../screens/SignUp/RegisterbyPhoneNumber";
 import { setUserId } from "../redux/store";
 import { connect } from "react-redux";
-import { useState } from "react";
 import { useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoadingComponent from "../components/LoadingComponent";
 import Appointments from "../screens/Appointments/Appointments";
 import SettingScreen from "../screens/Setting/Setting";
 import AboutYou from "../screens/SignUp/AboutYou";
+
 const Stack = createNativeStackNavigator();
-// Create a bottom tab navigator
 const Tab = createBottomTabNavigator();
 
 const MainTab = () => {
@@ -33,8 +31,6 @@ const MainTab = () => {
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-
-          // Map each route name to a corresponding icon
           switch (route.name) {
             case "Home":
               iconName = "home";
@@ -52,8 +48,6 @@ const MainTab = () => {
               iconName = "home";
               break;
           }
-
-          // Render the icon using the Icon component
           return <Icon name={iconName} size={size} color={color} />;
         },
         tabBarStyle: { backgroundColor: "#fff" },
@@ -63,17 +57,14 @@ const MainTab = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-
       <Tab.Screen name="Appointments" component={Appointments} />
-
       <Tab.Screen name="Favorites" component={BarbershopScreen} />
-
       <Tab.Screen name="Setting" component={SettingScreen} />
     </Tab.Navigator>
   );
 };
 
-const LoggedInStack = () => {
+const LoggedInStack = ({ setUserId }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,25 +90,29 @@ const LoggedInStack = () => {
   };
   return (
     <Stack.Navigator
-      initialRouteName="Main"
+      initialRouteName={"Main"}
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Main" component={MainTab} />
+
+      <Stack.Screen
+        name="RegisterbyPhoneNumber"
+        component={RegisterbyPhoneNumber}
+      />
+      <Stack.Screen name="LoginByPhoneNumber" component={LoginByPhoneNumber} />
+      <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="barbershop" component={BarbershopScreen} />
       <Stack.Screen name="UserDetails" component={UserDetailsScreen} />
       <Stack.Screen name="EmployeeList" component={EmployeeList} />
       <Stack.Screen name="Congratulations" component={Congratulations} />
       <Stack.Screen name="confirmation" component={Confirmation} />
-      <Stack.Screen name="LoginByPhoneNumber" component={LoginByPhoneNumber} />
-      <Stack.Screen
-        name="RegisterbyPhoneNumber"
-        component={RegisterbyPhoneNumber}
-      />
+
       <Stack.Screen name="AboutYou" component={AboutYou} />
+      <Stack.Screen name="Appointments" component={MainTab} />
     </Stack.Navigator>
   );
 };
+
 const mapDispatchToProps = (dispatch) => {
   return {
     setUserId: (myuserid) => dispatch(setUserId(myuserid)), // Dispatch the action

@@ -14,6 +14,7 @@ export default function Appointments() {
   const [bookingsList, setBookingsList] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const userId = useSelector((state) => state.user.userId);
+  console.log("USER ID IS", userId);
 
   const fetchData = () => {
     setRefreshing(true);

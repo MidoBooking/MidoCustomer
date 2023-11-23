@@ -22,6 +22,7 @@ function AboutYou() {
   const navigation = useNavigation();
 
   const userId = useSelector((state) => state.user.userId);
+  console.log("user id is", userId);
   const [errorMessage, setErrorMessage] = useState("");
   const [isPickerShow, setIsPickerShow] = useState(false);
   const [dateOfBirth, setdateOfBirth] = useState(new Date());
@@ -85,10 +86,10 @@ function AboutYou() {
         latitude: locationData.coords.latitude,
         longitude: locationData.coords.longitude,
       };
-
+      const aboutYouSet = true;
       // Make a POST request to your Express.js API to store user information
       const response = await fetch(
-        `http://192.168.0.8:3001/register/${userId}`,
+        `https://server.bafta.co/clientRegister/${userId}`,
         {
           method: "POST",
           headers: {
@@ -99,15 +100,18 @@ function AboutYou() {
             gender,
             dateOfBirth: formattedDateOfBirth,
             location,
+            aboutYouSet,
           }),
         }
       );
 
       if (response.status === 200) {
         console.log("User information stored successfully");
+
         navigation.navigate("Home");
       } else {
-        console.error("Failed to store user information");
+        const responseBody = await response.json(); // Parse the response body
+        console.error("Failed to store user information:", responseBody.error);
         // Handle the failure case, e.g., show an error message to the user
       }
     } catch (error) {

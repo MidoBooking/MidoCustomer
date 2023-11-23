@@ -15,11 +15,12 @@ import {
 } from "firebase/auth";
 import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
 import fbConfig from "../../firebase";
-import { useNavigation } from "@react-navigation/native";
 import COLORS from "../../consts/colors";
 import { connect } from "react-redux";
 import { setUserId } from "../../redux/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getDocs, collection, query, where } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 
 try {
   initializeApp(fbConfig);
@@ -28,15 +29,15 @@ try {
 }
 
 const auth = getAuth();
+const firestore = getFirestore();
 
-const LoginByPhoneNumber = ({ setUserId }) => {
+const LoginByPhoneNumber = ({ setUserId, navigation }) => {
   const [selectedCountry, setSelectedCountry] = useState("+251");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationId, setVerificationID] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [info, setInfo] = useState("");
 
-  const navigation = useNavigation();
   const recaptchaVerifier = useRef(null);
 
   const attemptInvisibleVerification = false;
@@ -44,15 +45,69 @@ const LoginByPhoneNumber = ({ setUserId }) => {
   const handleSendVerificationCode = async () => {
     try {
       const fullPhoneNumber = selectedCountry + phoneNumber;
-      const phoneProvider = new PhoneAuthProvider(auth);
-      const verificationId = await phoneProvider.verifyPhoneNumber(
-        fullPhoneNumber,
-        recaptchaVerifier.current
-      );
-      setVerificationID(verificationId);
-      setInfo("Verification code has been sent to your phone");
+
+      // Check if the user exists before sending OTP
+      const userRecord = await getUserRecord(fullPhoneNumber);
+      if (userRecord) {
+        const phoneProvider = new PhoneAuthProvider(auth);
+
+        const verificationId = await phoneProvider.verifyPhoneNumber(
+          fullPhoneNumber,
+          recaptchaVerifier.current
+        );
+
+        setVerificationID(verificationId);
+        setInfo("Verification code has been sent to your phone");
+      } else {
+        setInfo("Error: User not found in the database");
+        console.error("User not found in the database");
+
+        // Navigate to the "RegisterbyPhoneNumber" screen
+        navigation.navigate("RegisterbyPhoneNumber");
+      }
     } catch (error) {
       setInfo(`Error: ${error.message}`);
+    }
+  };
+
+  const getUserRecord = async (phoneNumber) => {
+    try {
+      const userRecord = await fetchUserRecordFromDatabase(phoneNumber);
+      return userRecord;
+    } catch (error) {
+      console.error("Error fetching user record:", error);
+      return null;
+    }
+  };
+
+  const yourDatabaseQueryFunction = async (phoneNumber) => {
+    const usersCollection = collection(firestore, "Clients");
+    const q = query(usersCollection, where("phoneNumber", "==", phoneNumber));
+
+    try {
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userRecord = querySnapshot.docs[0].data();
+        return userRecord;
+      } else {
+        return null; // User not found
+      }
+    } catch (error) {
+      console.error("Error fetching user record:", error);
+      return null;
+    }
+  };
+
+  const fetchUserRecordFromDatabase = async (phoneNumber) => {
+    console.log("Fetching user record for phone number:", phoneNumber);
+    try {
+      const userRecord = await yourDatabaseQueryFunction(phoneNumber);
+      console.log("User record found:", userRecord);
+      return userRecord;
+    } catch (error) {
+      console.error("Error fetching user record:", error);
+      return null;
     }
   };
 
@@ -63,19 +118,33 @@ const LoginByPhoneNumber = ({ setUserId }) => {
         verificationCode
       );
 
-      // Attempt to sign in the user with the provided credential
       const userCredential = await signInWithCredential(auth, credential);
       const user = userCredential.user;
-
+      // Save the user's ID in AsyncStorage
+      await AsyncStorage.setItem("userId", user.uid);
       if (user) {
-        // User found in the database, log success message
         setInfo("Success: Phone authentication successful");
-        setUserId(user.uid);
-        navigation.navigate("Main");
+
+        // Check 'aboutYouSet' in Firestore
+        const userRecord = await fetchUserRecordFromDatabase(
+          selectedCountry + phoneNumber
+        );
+        const aboutYouSet = userRecord ? userRecord.aboutYouSet : false;
+
+        if (aboutYouSet) {
+          // User has completed 'AboutYou' section
+          setUserId(user.uid);
+          navigation.navigate("Main");
+        } else {
+          // User needs to complete 'AboutYou' section
+          setUserId(user.uid);
+          navigation.navigate("AboutYou");
+        }
       } else {
-        // User not found in the database, log an error message
         setInfo("Error: User not found in the database");
         console.error("User not found in the database");
+
+        navigation.navigate("RegisterbyPhoneNumber");
       }
     } catch (error) {
       setInfo(`Error: ${error.message}`);
@@ -158,10 +227,10 @@ const LoginByPhoneNumber = ({ setUserId }) => {
           </TouchableOpacity>
         </View>
       )}
-      {attemptInvisibleVerification && <FirebaseRecaptchaBanner />}
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -241,15 +310,13 @@ const styles = StyleSheet.create({
   },
   registerText: {
     color: "black",
-
     fontSize: 16,
   },
 });
 
-// Connect the component to Redux
 const mapDispatchToProps = (dispatch) => {
   return {
-    setUserId: (userId) => dispatch(setUserId(userId)), // Dispatch the action
+    setUserId: (userId) => dispatch(setUserId(userId)),
   };
 };
 

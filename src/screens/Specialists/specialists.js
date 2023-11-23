@@ -9,8 +9,10 @@ import {
   ScrollView,
   StyleSheet,
   TouchableWithoutFeedback,
+  Alert,
 } from "react-native";
 import Modal from "react-native-modal";
+import * as Location from "expo-location";
 
 import moment from "moment";
 import { useRoute } from "@react-navigation/native";
@@ -29,7 +31,12 @@ const ServiceProviderList = () => {
   const [selectedStartTime, setSelectedStartTime] = useState(null);
   const [selectedEndTime, setSelectedEndTime] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [selectedBusinessOwnerId, setSelectedBusinessOwnerId] = useState(null);
+  const [bookingDataFromDatabase, setBookingDataFromDatabase] = useState([]);
+  const [selectedServiceProviderId, setSelectedServiceProviderId] =
+    useState(null);
   const [selectedCalendar, setSelectedCalendar] = useState(null);
+
   const [client, setClient] = useState(null);
   const [isConfirmationModalVisible, setIsConfirmationModalVisible] =
     useState(false);
@@ -58,6 +65,9 @@ const ServiceProviderList = () => {
 
   console.log(businessOwnerId);
   const handleServiceProviderSelect = (provider) => {
+    setSelectedServiceProviderId(provider.serviceProviderId);
+    setSelectedBusinessOwnerId(businessOwnerId);
+
     // Clear the previous selections
     setSelectedDay(null);
     setSelectedStartTime(null);
@@ -66,6 +76,8 @@ const ServiceProviderList = () => {
 
     // Set the new selected service provider
     setSelectedServiceProvider(provider);
+
+    // Log the selected values
   };
 
   const handleTimeSlotSelect = (timeSlot) => {
@@ -82,15 +94,6 @@ const ServiceProviderList = () => {
       .catch((error) => console.error("Error fetching data:", error));
   }, []);
 
-  useEffect(() => {
-    fetch("http://192.168.0.8:3001/fetchClients/1234")
-      .then((response) => response.json())
-      .then((data) => {
-        setClient(data);
-        console.log("clita data is ", data);
-      })
-      .catch((error) => console.error("Error fetching clients:", error));
-  }, []);
   const weekDays = [
     "Monday",
     "Tuesday",
@@ -118,16 +121,48 @@ const ServiceProviderList = () => {
       const startTime = moment(selectedStartTime, "HH:mm");
       const endTime = moment(selectedEndTime, "HH:mm");
 
+      // Use the dynamic booking data from the server
+      const bookedSlots = bookingDataFromDatabase.map((bookedData) => ({
+        start: bookedData.selectedTimeSlot,
+        end: bookedData.selectedEndTime,
+      }));
+
+      // Sort booked slots by start time
+      bookedSlots.sort((a, b) =>
+        moment(a.start, "HH:mm").diff(moment(b.start, "HH:mm"))
+      );
+
+      console.log("booked slots from database:", bookedSlots);
+
       const timeSlots = [];
       let currentTime = startTime.clone();
 
-      while (currentTime.isBefore(endTime)) {
-        timeSlots.push(currentTime.format("HH:mm A"));
+      for (const bookedSlot of bookedSlots) {
+        const bookedSlotStart = moment(bookedSlot.start, "HH:mm");
+        const bookedSlotEnd = moment(bookedSlot.end, "HH:mm");
+
+        // Generate time slots before the booked slot
+        while (currentTime.isBefore(bookedSlotStart)) {
+          timeSlots.push(currentTime.format("HH:mm"));
+          currentTime.add(serviceDuration, "minutes");
+        }
+
+        // Move the current time to the end of the booked slot
+        currentTime = bookedSlotEnd.clone();
+      }
+
+      // Generate time slots after the last booked slot until the end time
+      while (
+        currentTime.isBefore(endTime) ||
+        currentTime.isSame(endTime, "minute")
+      ) {
+        timeSlots.push(currentTime.format("HH:mm"));
         currentTime.add(serviceDuration, "minutes");
       }
 
       return timeSlots;
     }
+
     return [];
   };
 
@@ -142,7 +177,10 @@ const ServiceProviderList = () => {
     const rowEnd = Math.min(rowStart + numCols, timeSlots.length);
     timeSlotRows.push(timeSlots.slice(rowStart, rowEnd));
   }
-  const handleDaySelect = (day) => {
+  const handleDaySelect = async (day) => {
+    setSelectedTimeSlot(null);
+    setBookingDataFromDatabase([]);
+
     setSelectedDay(day);
     setSelectedStartTime(selectedServiceProvider.workingHours[day].start);
     setSelectedEndTime(selectedServiceProvider.workingHours[day].end);
@@ -151,64 +189,144 @@ const ServiceProviderList = () => {
     // Format the date as "DD/MM/YYYY" and update the selectedCalendar state
     const currentDate = moment().add(filteredWeekDays.indexOf(day), "days");
     const formattedDate = currentDate.format("DD/MM/YYYY");
-
-    setSelectedCalendar(formattedDate);
+    setSelectedCalendar((prevSelectedCalendar) => {
+      console.log("Previous selected calendar", prevSelectedCalendar);
+      console.log("New selected calendar", formattedDate);
+      return formattedDate;
+    });
   };
+  useEffect(() => {
+    if (
+      selectedBusinessOwnerId &&
+      selectedServiceProviderId &&
+      selectedCalendar
+    ) {
+      const fetchData = async () => {
+        try {
+          const apiUrl = `${API_URL}/fetchBooking?businessOwnerId=${selectedBusinessOwnerId}&selectedCalendar=${selectedCalendar}&serviceProviderId=${selectedServiceProviderId}`;
 
+          const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          const data = await response.json();
+          console.log("Booking Data:", data);
+
+          if (data && data.bookings && data.bookings.length > 0) {
+            // Filter bookings based on the 'approved' field
+            const approvedBookings = data.bookings.filter(
+              (booking) => booking.approved === true
+            );
+            setBookingDataFromDatabase(approvedBookings);
+            data.bookings.forEach((bookedData, index) => {
+              console.log(`Booking ${index + 1}:`);
+              console.log(
+                "Selected Time Slot from database:",
+                bookedData.selectedTimeSlot
+              );
+              console.log(
+                "Selected End Time from database",
+                bookedData.selectedEndTime
+              );
+            });
+          } else {
+            console.log(
+              "No matching bookings found for the specified criteria."
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching booking data:", error);
+        }
+      };
+
+      fetchData(); // Call the fetchData function when the relevant state is updated
+    }
+  }, [selectedBusinessOwnerId, selectedServiceProviderId, selectedCalendar]);
   // ...
 
   useEffect(() => {
     console.log("selected calendar is", selectedCalendar);
+    Alert.alert(
+      "Permission Denied",
+      "Permission to access location was denied. Please enable location services in your device settings.",
+      [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+      { cancelable: false }
+    );
   }, [selectedCalendar]);
-  const handleBooking = () => {
+  const handleBooking = async () => {
     // Check if all required data is available
+
     if (
       businessOwnerId &&
       selectedServiceProvider &&
       selectedDay &&
       selectedTimeSlot
     ) {
-      const dayOfMonth = moment()
-        .add(filteredWeekDays.indexOf(selectedDay), "days")
-        .date();
+      try {
+        // Request location permission
+        const { status } = await Location.requestForegroundPermissionsAsync();
 
-      // Create a formatted date string in the "dd/mm/yy" format
+        if (status !== "granted") {
+          console.error("Permission to access location was denied");
+          // Handle the case where location permission is denied
+          // Display an alert to notify the user about the denied permission
+          Alert.alert(
+            "Permission Denied",
+            "Permission to access location was denied. Please enable location services in your device settings.",
+            [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+            { cancelable: false }
+          );
+          return;
+        }
 
-      console.log("selected calendar is", selectedCalendar);
-      // Update the bookingData state
-      setBookingData({
-        businessOwnerId,
-        serviceProviderId: selectedServiceProvider.serviceProviderId,
-        selectedDate: selectedDay,
-        selectedCalendar, // Include selectedCalendar
-        services: selectedServiceNames,
-        selectedServiceProviderImage: selectedServiceProvider.imageUrl,
-        selectedServiceProviderName: selectedServiceProvider.name,
-        totalPrice,
-        selectedTimeSlot: selectedTimeSlot,
-        userId: userId,
-        businessName,
-      });
+        // Get the user's current location
+        const locationData = await Location.getCurrentPositionAsync({});
 
-      // Create the request data with selectedCalendar
-      const requestData = {
-        businessOwnerId,
-        serviceProviderId: selectedServiceProvider.serviceProviderId,
-        selectedDate: selectedDay,
-        selectedCalendar, // Include selectedCalendar
-        services: selectedServiceNames,
-        selectedServiceProviderImage: selectedServiceProvider.imageUrl,
-        selectedServiceProviderName: selectedServiceProvider.name,
-        totalPrice,
-        businessName,
-      };
-      // Show the confirmation modal
-      setIsConfirmationModalVisible(true);
+        const location = {
+          latitude: locationData.coords.latitude,
+          longitude: locationData.coords.longitude,
+        };
+
+        // Calculate end time based on selected time slot and service duration
+        const startTime = moment(selectedTimeSlot, "HH:mm");
+        const endTime = startTime.clone().add(serviceDuration, "minutes");
+        console.log("Selected Time Slot:", selectedTimeSlot);
+        console.log("Calculated End Time:", endTime.format("HH:mm"));
+
+        // Update the bookingData state
+        setBookingData({
+          businessOwnerId,
+          serviceProviderId: selectedServiceProvider.serviceProviderId,
+          selectedDate: selectedDay,
+          selectedCalendar,
+          services: selectedServiceNames,
+          selectedServiceProviderImage: selectedServiceProvider.imageUrl,
+          selectedServiceProviderName: selectedServiceProvider.name,
+          totalPrice,
+          selectedTimeSlot,
+          selectedEndTime: endTime.format("HH:mm"), // Include selected end time
+          userId,
+          businessName,
+          serviceDuration,
+          userLocation: location,
+        });
+
+        // Show the confirmation modal
+        setIsConfirmationModalVisible(true);
+      } catch (error) {
+        console.error("Error getting location", error);
+        // Handle the case where an error occurs while getting the location
+      }
     } else {
       // Handle the case where required data is missing
       console.error("Missing required data for booking");
       // Optionally, you can display an error message to the user.
     }
+    ///////////////////////////////////////////////////////////
+    ///////////////////////////////
   };
 
   const handleConfirmation = () => {
