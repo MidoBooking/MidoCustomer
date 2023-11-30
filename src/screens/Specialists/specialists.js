@@ -249,13 +249,8 @@ const ServiceProviderList = () => {
 
   useEffect(() => {
     console.log("selected calendar is", selectedCalendar);
-    Alert.alert(
-      "Permission Denied",
-      "Permission to access location was denied. Please enable location services in your device settings.",
-      [{ text: "OK", onPress: () => console.log("OK Pressed") }],
-      { cancelable: false }
-    );
   }, [selectedCalendar]);
+
   const handleBooking = async () => {
     // Check if all required data is available
 
@@ -267,12 +262,8 @@ const ServiceProviderList = () => {
     ) {
       try {
         // Request location permission
-        const { status } = await Location.requestForegroundPermissionsAsync();
-
+        let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          console.error("Permission to access location was denied");
-          // Handle the case where location permission is denied
-          // Display an alert to notify the user about the denied permission
           Alert.alert(
             "Permission Denied",
             "Permission to access location was denied. Please enable location services in your device settings.",
@@ -289,7 +280,7 @@ const ServiceProviderList = () => {
           latitude: locationData.coords.latitude,
           longitude: locationData.coords.longitude,
         };
-
+        console.log("user current locaiton is", location);
         // Calculate end time based on selected time slot and service duration
         const startTime = moment(selectedTimeSlot, "HH:mm");
         const endTime = startTime.clone().add(serviceDuration, "minutes");

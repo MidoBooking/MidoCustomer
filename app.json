@@ -28,8 +28,7 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "ACCESS_FINE_LOCATION"
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
@@ -39,6 +38,14 @@
       "eas": {
         "projectId": "3da8de0e-565c-4234-a31b-f9a0362c8d75"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Mido to use your location."
+        }
+      ]
+    ]
   }
 }
